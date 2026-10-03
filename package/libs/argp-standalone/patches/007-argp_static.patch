@@ -1,0 +1,13 @@
+diff --git a/meson.build b/meson.build
+index 63a67f5..6377b7a 100644
+--- a/meson.build
++++ b/meson.build
+@@ -64,7 +64,7 @@ if conf_data.get('HAVE_MEMPCPY') == 0
+ endif
+ 
+ if host_machine.system() != 'windows'
+-	argp_library = library('argp',
++	argp_library = both_libraries('argp',
+ 		argp_source,
+ 		include_directories : '.',
+ 		version : meson.project_version(),

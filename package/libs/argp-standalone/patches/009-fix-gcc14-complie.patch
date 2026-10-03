@@ -1,0 +1,108 @@
+diff --git a/argp-fmtstream.c b/argp-fmtstream.c
+index cea67b9..5ee68dd 100644
+--- a/argp-fmtstream.c
++++ b/argp-fmtstream.c
+@@ -95,6 +95,8 @@ weak_alias (__argp_make_fmtstream, argp_make_fmtstream)
+ void
+ __argp_fmtstream_free(argp_fmtstream_t fs)
+ {
++    if (fs == NULL)
++        return;
+     __argp_fmtstream_update(fs);
+     if (fs->p > fs->buf)
+     {
+diff --git a/argp-help.c b/argp-help.c
+index 0f0bf8c..b7341e4 100644
+--- a/argp-help.c
++++ b/argp-help.c
+@@ -80,7 +80,7 @@ strchrnul(const char* s, int c);
+ #endif /* !_LIBC */
+ 
+ /* can't use macro due to double evaluation */
+-static char*
++static const char*
+ dgettext_safe(const char* d, const char* m)
+ {
+     return m ? dgettext(d, m) : NULL;
+@@ -1326,7 +1326,10 @@ hol_usage(struct hol* hol, argp_fmtstream_t stream)
+     {
+         unsigned nentries;
+         struct hol_entry* entry;
+-        char* short_no_arg_opts = alloca(strlen(hol->short_options) + 1);
++        size_t so_len = strlen(hol->short_options) + 1;
++        char* short_no_arg_opts = malloc(so_len);
++        if (!short_no_arg_opts)
++            return;
+         char* snao_end = short_no_arg_opts;
+ 
+         /* First we put a list of short options without arguments.  */
+@@ -1347,6 +1350,8 @@ hol_usage(struct hol* hol, argp_fmtstream_t stream)
+         /* Finally, a list of long options (whew!).  */
+         for (entry = hol->entries, nentries = hol->num_entries; nentries > 0; entry++, nentries--)
+             hol_entry_long_iterate(entry, usage_long_opt, entry->argp->argp_domain, stream);
++
++        free(short_no_arg_opts);
+     }
+ }
+ 
+@@ -1558,6 +1563,7 @@ _help(const struct argp* argp,
+     int anything = 0; /* Whether we've output anything.  */
+     struct hol* hol = 0;
+     argp_fmtstream_t fs;
++    char *pattern_levels = NULL;
+ 
+     if (!stream)
+         return;
+@@ -1574,7 +1580,7 @@ _help(const struct argp* argp,
+ #if 0 || (HAVE_FLOCKFILE && HAVE_FUNLOCKFILE)
+       __funlockfile (stream);
+ #endif
+-        return;
++        goto cleanup_help;
+     }
+ 
+     if (flags & (ARGP_HELP_USAGE | ARGP_HELP_SHORT_USAGE | ARGP_HELP_LONG))
+@@ -1593,7 +1599,9 @@ _help(const struct argp* argp,
+     {
+         int first_pattern = 1, more_patterns;
+         size_t num_pattern_levels = argp_args_levels(argp);
+-        char* pattern_levels = alloca(num_pattern_levels);
++        pattern_levels = malloc(num_pattern_levels);
++        if (!pattern_levels)
++            goto cleanup_help;
+ 
+         memset(pattern_levels, 0, num_pattern_levels);
+ 
+@@ -1680,9 +1688,11 @@ Try `%s --help' or `%s --usage' for more information.\n"),
+   __funlockfile (stream);
+ #endif
+ 
++cleanup_help:
++    if (pattern_levels)
++        free(pattern_levels);
+     if (hol)
+         hol_free(hol);
+-
+     __argp_fmtstream_free(fs);
+ }
+ 
+@@ -1717,7 +1727,7 @@ __argp_short_program_name(const struct argp_state* state)
+            but currently the value is passed on directly to fputs_unlocked,
+            so that requires more changes. */
+ #if __GNUC__
+-#warning No reasonable value to return
++/* FIXME: No reasonable value to return */
+     return "";
+ #endif /* __GNUC__ */
+ #endif /* !HAVE_DECL_PROGRAM_INVOCATION_NAME */
+@@ -1863,9 +1873,8 @@ weak_alias(__argp_error, argp_error)
+ 
+             if (errnum)
+             {
+-                char buf[200];
+-
+ #if 0
++                char buf[200];
+ 	      __fxprintf (stream, ": %s",
+ 			  __strerror_r (errnum, buf, sizeof (buf)));
+ #else

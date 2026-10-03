@@ -1,0 +1,42 @@
+diff --git a/argp-help.c b/argp-help.c
+index 0f0bf8c..e1a58fc 100644
+--- a/argp-help.c
++++ b/argp-help.c
+@@ -26,10 +26,10 @@
+ #endif
+ 
+ /* AIX requires this to be the first thing in the file.  */
+-#ifndef __GNUC__
+ #if HAVE_ALLOCA_H || 0
+ #include <alloca.h>
+-#elif defined(_WIN32)
++#elif defined(__GNUC__)
++#if defined(_WIN32)
+ #define alloca _alloca
+ #elif defined(_AIX)
+ #pragma alloca
+diff --git a/argp-parse.c b/argp-parse.c
+index f308049..bd58525 100644
+--- a/argp-parse.c
++++ b/argp-parse.c
+@@ -27,10 +27,9 @@
+ #endif
+ 
+ /* AIX requires this to be the first thing in the file.  */
+-#ifndef __GNUC__
+-#if HAVE_ALLOCA_H
++#if HAVE_ALLOCA_H || 0
+ #include <alloca.h>
+-#else
++#elif defined(__GNUC__)
+ #ifdef _AIX
+ #pragma alloca
+ #elif defined(_WIN32)
+@@ -42,7 +41,6 @@ alloca();
+ #endif
+ #endif
+ #endif
+-#endif
+ 
+ #ifdef _WIN32
+ #include <windows.h>
