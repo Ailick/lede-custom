@@ -218,6 +218,10 @@ endef
 
 OPENSSL_OPTIONS:= shared no-tests
 
+ifdef CONFIG_TARGET_airoha_an7581
+  OPENSSL_OPTIONS += enable-ktls
+endif
+
 ifndef CONFIG_OPENSSL_WITH_BLAKE2
   OPENSSL_OPTIONS += no-blake2
 endif
